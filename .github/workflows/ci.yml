@@ -113,6 +113,39 @@ jobs:
           container-name: application-service
           image: ${{ steps.build-image.outputs.image }}
 
+      - name: Register task definition
+        id: register-task
+        run: |
+          TASK_DEF_FILE="${{ steps.task-def.outputs.task-definition }}"
+          echo "Task definition file: $TASK_DEF_FILE"
+          
+          # Check if file exists
+          if [ ! -f "$TASK_DEF_FILE" ]; then
+            echo "Error: Task definition file not found: $TASK_DEF_FILE"
+            echo "Current directory: $(pwd)"
+            echo "Files in current directory:"
+            ls -la
+            exit 1
+          fi
+          
+          echo "Task definition content:"
+          cat "$TASK_DEF_FILE"
+          
+          # Register the task definition
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json "file://$TASK_DEF_FILE" \
+            --region us-east-2 \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          
+          if [ -z "$TASK_DEF_ARN" ] || [ "$TASK_DEF_ARN" = "None" ]; then
+            echo "Error: Failed to register task definition"
+            exit 1
+          fi
+          
+          echo "task-def-arn=$TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "Registered task definition: $TASK_DEF_ARN"
+
       - name: Check if ECS service exists
         id: check-service
         run: |
@@ -136,10 +169,17 @@ jobs:
       - name: Create ECS service (if it doesn't exist)
         if: steps.check-service.outputs.exists == 'false'
         run: |
+          # Use the registered task definition ARN, or fall back to family name
+          TASK_DEF="${{ steps.register-task.outputs.task-def-arn }}"
+          if [ -z "$TASK_DEF" ] || [ "$TASK_DEF" = "null" ]; then
+            echo "Warning: Task definition ARN not found, using family name"
+            TASK_DEF="application-service"
+          fi
+          echo "Creating service with task definition: $TASK_DEF"
           aws ecs create-service \
             --cluster application-service-cluster \
             --service-name application-service \
-            --task-definition ${{ steps.task-def.outputs.task-definition }} \
+            --task-definition "$TASK_DEF" \
             --desired-count 1 \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-0a4409c3ce60b53b5,subnet-03e603bd46799414c,subnet-0b737b8f61a0eb726],securityGroups=[sg-0729ec7d84d1a5a1c],assignPublicIp=ENABLED}" \
