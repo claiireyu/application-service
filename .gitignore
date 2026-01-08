@@ -32,9 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 
-### AWS Infrastructure ###
-ecs-task-definition.json
-
 ### Configuration Files with Sensitive Data ###
 # Local development configs - use templates instead
 src/main/resources/application.yaml
