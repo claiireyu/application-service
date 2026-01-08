@@ -113,6 +113,38 @@ jobs:
           container-name: application-service
           image: ${{ steps.build-image.outputs.image }}
 
+      - name: Check if ECS service exists
+        id: check-service
+        run: |
+          SERVICE_NAME="application-service"
+          CLUSTER_NAME="application-service-cluster"
+          SERVICE_EXISTS=$(aws ecs describe-services \
+            --cluster $CLUSTER_NAME \
+            --services $SERVICE_NAME \
+            --region us-east-2 \
+            --query 'services[0].status' \
+            --output text 2>/dev/null || echo "MISSING")
+          
+          if [ "$SERVICE_EXISTS" = "MISSING" ] || [ "$SERVICE_EXISTS" = "None" ]; then
+            echo "Service does not exist, will create it"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "Service exists, will update it"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create ECS service (if it doesn't exist)
+        if: steps.check-service.outputs.exists == 'false'
+        run: |
+          aws ecs create-service \
+            --cluster application-service-cluster \
+            --service-name application-service \
+            --task-definition ${{ steps.task-def.outputs.task-definition }} \
+            --desired-count 1 \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[subnet-0a4409c3ce60b53b5,subnet-03e603bd46799414c,subnet-0b737b8f61a0eb726],securityGroups=[sg-0729ec7d84d1a5a1c],assignPublicIp=ENABLED}" \
+            --region us-east-2
+
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
