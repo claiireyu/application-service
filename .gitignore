@@ -31,3 +31,25 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### AWS Infrastructure ###
+ecs-task-definition.json
+
+### Configuration Files with Sensitive Data ###
+# Local development configs - use templates instead
+src/main/resources/application.yaml
+docker-compose.yml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Secrets and credentials
+secrets/
+*.pem
+*.key
+*.p12
+*.jks
+credentials.json
