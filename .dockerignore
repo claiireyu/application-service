@@ -1,0 +1,61 @@
+# Build artifacts
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+HELP.md
+plan/
+*.md
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Maven wrapper (not needed in Docker, Maven is in the image)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Test files (tests are skipped in Docker build)
+src/test/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
